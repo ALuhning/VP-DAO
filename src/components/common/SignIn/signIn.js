@@ -55,7 +55,7 @@ const classes = useStyles()
                         image={require("/assets/near_logo.png")}
                         title="Near Logo"
                     />
-                    <CardHeader title="Ready To Mint Your Own Fungible Token?"></CardHeader>
+                    <CardHeader title="Ready to Add DAO Features to Your Community?"></CardHeader>
                     <CardContent>
                     <Typography variant="body2" color="textPrimary" component="p" style={{marginBottom: 20}}>
                     To do so, you need to sign in. The button below will sign you in using NEAR Wallet.</Typography>

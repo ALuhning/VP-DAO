@@ -1,4 +1,4 @@
-const CONTRACT_NAME = process.env.CONTRACT_NAME ||'token-access'
+const CONTRACT_NAME = process.env.CONTRACT_NAME ||'dao'
 
 function getConfig(env) {
   switch (env) {

@@ -1,6 +1,9 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import TransferTable from '../TransferTable/transferTable'
-import MintTable from '../MintTable/mintTable'
+import ProposalsTable from '../ProposalsTable/proposalsTable'
+import VotingListTable from '../votingTable/votingTable'
+import QueueTable from '../QueueTable/queueTable'
+import ProcessedTable from '../ProcessedTable/processedTable'
 import BurnTable from '../BurnTable/burnTable'
 import OwnerTransferTable from '../OwnershipTransferTable/ownerTransferTable'
 import BalanceChart from '../BalanceGraphs/balanceGraph'
@@ -23,6 +26,13 @@ const useStyles = makeStyles({
 });
 
 export default function TransferList(props) {
+  const[loaded, setLoaded] = useState(false)
+  const[proposalCount, setProposalCount] = useState(0)
+  const[votingCount, setVotingCount] = useState(0)
+  const[queueCount, setQueueCount] = useState(0)
+  const[processCount, setProcessCount] = useState(0)
+  const[fundingRequestCount, setFundingRequestCount] = useState(1)
+
   const classes = useStyles()
   const theme = useTheme()
   const matches = useMediaQuery(theme.breakpoints.only('xs'))
@@ -35,11 +45,33 @@ export default function TransferList(props) {
     initialSupply, 
     accountBalance,
     tabValue,
-    handleTabValueState } = props
+    handleTabValueState,
+    handleProposalEventChange,
+    handleGuildBalanceChanges,
+    handleEscrowBalanceChanges,
+    proposalEvents,
+    memberStatus
+  } = props
 
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
   };
+
+  function handleProposalCountChange(newCount) {
+    setProposalCount(newCount)
+  }
+
+  function handleVotingCountChange(newCount) {
+    setVotingCount(newCount)
+  }
+
+  function handleProcessCountChange(newCount) {
+    setProcessCount(newCount)
+  }
+
+  function handleQueueCountChange(newCount) {
+    setQueueCount(newCount)
+  }
 
   const handleChangeRowsPerPage = (event) => {
       setRowsPerPage(parseInt(event.target.value, 10));
@@ -49,6 +81,36 @@ export default function TransferList(props) {
   const handleTabChange = (event, newValue) => {
       handleTabValueState(newValue);
   };
+
+
+
+  
+  let allProposalsList = []
+  let votingList = []
+  let whiteListProposalList = []
+  let guildKickProposalList = []
+  let memberProposalList = []
+
+      if (proposalEvents.length > 0) {
+        proposalEvents.map((fr, i) => {
+              
+                allProposalsList.push([{blockIndex: fr.proposalSubmission, applicant: fr.applicant, proposer: fr.delegateKey, requestId: fr.proposalIdentifier, shares: fr.sharesRequested, loot: fr.lootRequested, tribute: fr.tributeOffered}])
+                
+                
+    //          } else if (fr.flags[5]) {
+    //            
+    //            guildKickProposalList.push([{blockIndex: fr.proposalSubmission, memberToKick: fr.applicant, proposer: fr.delegateKey}])
+     //           
+    //          } else if (fr.flags[6]) {
+    //            memberProposalList.push([{blockIndex: fr.proposalSubmission, applicant: fr.applicant, proposer: fr.delegateKey, shares: fr.sharesRequested, tribute: fr.tributeOffered, requestId: fr.proposalIdentifier}])
+              
+
+          })
+        
+      }
+  
+
+     
 
   let transferList = []
   let runningBalance = 0
@@ -127,6 +189,11 @@ export default function TransferList(props) {
     })
   }
 
+  const proposalTabLabel = 'Proposals ('+ proposalCount + ')'
+  const votingTabLabel = 'Voting (' + votingCount + ')'
+  const queueLabel = 'Queued (' + queueCount + ')'
+  const processedLabel = 'Processed (' + processCount +')'
+  
   return (
     <>
     
@@ -141,43 +208,134 @@ export default function TransferList(props) {
         <AppBar position="static">
       {!matches 
         ? <TabList onChange={handleTabChange} aria-label="simple tabs example" variant="fullWidth">
-            <Tab className="appBar" label="Transfers" value="1" />
-            <Tab label="Mints" value="2"/>
-            <Tab label="Burns" value="3" />
-            <Tab label="Owners" value="4" />
+            <Tab className="appBar" label={proposalTabLabel} value="1" />
+            <Tab label={votingTabLabel} value="2"/>
+            <Tab label={queueLabel} value="3" />
+            <Tab label={processedLabel} value="4" />
+           
           </TabList>
         : <TabList onChange={handleTabChange} aria-label="simple tabs example">
-            <Tab className="appBar" label="Transfers" value="1" />
-            <Tab label="Mints" value="2"/>
-            <Tab label="Burns" value="3" />
-            <Tab label="Owners" value="4" />
+            <Tab className="appBar" label={proposalTabLabel} value="1" />
+            <Tab label={votingTabLabel} value="2"/>
+            <Tab label={queueLabel} value="3" />
+            <Tab label={processedLabel} value="4" />
+           
           </TabList>
       }
       </AppBar>
-      <TabPanel value="1">{(transferEvents.length > 0 ? <TransferTable transferList={transferList.reverse()} eventCount={transferList.length} matches={matches} tokenOwner={tokenOwner} accountId={accountId}/> : <div style={{marginTop: 10, marginBottom: 10}}>No Transfer Events</div>)}</TabPanel>
-      <TabPanel value="2">{(mintEvents.length > 0 ? <MintTable mintList={mintList} eventCount={mintList.length} matches={matches} /> : <div style={{marginTop: 10, marginBottom: 10}}>No Minting Events</div>)}</TabPanel>
-      <TabPanel value="3">{(burnEvents.length > 0 ? <BurnTable burnList={burnList} eventCount={burnList.length} matches={matches} /> : <div style={{marginTop: 10, marginBottom: 10}}>No Burn Events</div>)}</TabPanel>
-      <TabPanel value="4">{(ownerTransferEvents.length > 0 ? <OwnerTransferTable otList={otList} eventCount={otList.length} matches={matches} /> : <div style={{marginTop: 10, marginBottom: 10}}>No Ownership Transfers</div>)}</TabPanel>
+      <TabPanel value="1">{(allProposalsList.length > 0 ? <ProposalsTable 
+        loaded={loaded} 
+        allProposalsList={allProposalsList} 
+        eventCount={allProposalsList.length} 
+        matches={matches} 
+        tokenOwner={tokenOwner} 
+        accountId={accountId}
+        memberStatus={memberStatus}
+        handleProposalCountChange={handleProposalCountChange}
+        handleProposalEventChange={handleProposalEventChange}
+        handleGuildBalanceChanges={handleGuildBalanceChanges}
+        handleEscrowBalanceChanges={handleEscrowBalanceChanges}
+        /> : <div style={{marginTop: 10, marginBottom: 10}}>No Proposals</div>)}</TabPanel>
+      <TabPanel value="2">{(allProposalsList.length > 0 ? <VotingTable 
+        allProposalsList={allProposalsList} 
+        eventCount={allProposalsList.length}  
+        matches={matches} 
+        accountId={accountId} 
+        memberStatus={memberStatus}
+        handleVotingCountChange={handleVotingCountChange}
+        handleProposalEventChange={handleProposalEventChange}
+        handleGuildBalanceChanges={handleGuildBalanceChanges}
+        handleEscrowBalanceChanges={handleEscrowBalanceChanges}
+        /> : <div style={{marginTop: 10, marginBottom: 10}}>No Proposals Ready for Voting</div>)}</TabPanel>
+      <TabPanel value="3">{(allProposalsList.length > 0 ? <QueueTable 
+        allProposalsList={allProposalsList} 
+        eventCount={allProposalsList.length} 
+        matches={matches} 
+        accountId={accountId}
+        memberStatus={memberStatus} 
+        handleQueueCountChange={handleQueueCountChange}
+        handleProposalEventChange={handleProposalEventChange}
+        handleGuildBalanceChanges={handleGuildBalanceChanges}
+        handleEscrowBalanceChanges={handleEscrowBalanceChanges}
+        /> : <div style={{marginTop: 10, marginBottom: 10}}>No Queued Proposals</div>)}</TabPanel>
+      <TabPanel value="4">{(allProposalsList.length > 0 ? <ProcessedTable 
+        allProposalsList={allProposalsList} 
+        eventCount={allProposalsList.length} 
+        matches={matches} 
+        accountId={accountId}
+        memberStatus={memberStatus}
+        handleProcessCountChange={handleProcessCountChange}
+        handleProposalEventChange={handleProposalEventChange}
+        handleGuildBalanceChanges={handleGuildBalanceChanges}
+        handleEscrowBalanceChanges={handleEscrowBalanceChanges}
+        /> : <div style={{marginTop: 10, marginBottom: 10}}>No Processed Proposals</div>)}</TabPanel>
+    
     </TabContext>)
     :  (<TabContext value={tabValue}>
         <AppBar position="static">
         {!matches 
           ? <TabList onChange={handleTabChange} aria-label="simple tabs example" variant="fullWidth">
-              <Tab className="appBar" label="Transfers" value="1" align="left" />
-              <Tab label="" value="1"/>
+              <Tab className="appBar" label={proposalTabLabel} value="1" align="left" />
+              <Tab label={votingTabLabel} value="2"/>
+              <Tab label={queueLabel} value="3" />
+              <Tab label={processedLabel} value="4" />
             </TabList>
           : <TabList onChange={handleTabChange} aria-label="simple tabs example">
-              <Tab className="appBar" label="Transfers" value="1" />
-              <Tab label="" value="1"/>
+              <Tab className="appBar" label={proposalTabLabel} value="1" />
+              <Tab label={votingTabLabel} value="2"/>
+              <Tab label={queueLabel} value="3" />
+              <Tab label={processedLabel} value="4" />
             </TabList>
         }
     </AppBar>
-      <TabPanel value="1">{(transferEvents.length > 0 ? <TransferTable transferList={transferList.reverse()} eventCount={transferList.length} matches={matches} tokenOwner={tokenOwner} accountId={accountId}/> : 'No Transfer Events')}</TabPanel>
+      <TabPanel value="1">{(allProposalsList.length > 0 ? <ProposalsTable 
+        allProposalsList={allProposalsList} 
+        loaded={loaded} 
+        eventCount={allProposalsList.length} 
+        matches={matches} 
+        tokenOwner={tokenOwner} 
+        accountId={accountId} 
+        memberStatus={memberStatus}
+        handleProposalCountChange={handleProposalCountChange}
+        handleProposalEventChange={handleProposalEventChange}
+        handleGuildBalanceChanges={handleGuildBalanceChanges}
+        handleEscrowBalanceChanges={handleEscrowBalanceChanges}
+        /> : 'No Proposals')}</TabPanel>
+      <TabPanel value="2">{(allProposalsList.length > 0 ? <VotingListTable 
+        allProposalsList={allProposalsList} 
+        eventCount={allProposalsList.length}  
+        matches={matches} 
+        accountId={accountId} 
+        memberStatus={memberStatus}
+        handleVotingCountChange={handleVotingCountChange}
+        handleProposalEventChange={handleProposalEventChange}
+        handleGuildBalanceChanges={handleGuildBalanceChanges}
+        handleEscrowBalanceChanges={handleEscrowBalanceChanges}
+        /> : <div style={{marginTop: 10, marginBottom: 10}}>No Proposals Ready for Voting</div>)}</TabPanel>
+      <TabPanel value="3">{(allProposalsList.length > 0 ? <QueueTable 
+        allProposalsList={allProposalsList} 
+        eventCount={allProposalsList.length} 
+        matches={matches} 
+        accountId={accountId}
+        memberStatus={memberStatus}
+        handleQueueCountChange={handleQueueCountChange}
+        handleProposalEventChange={handleProposalEventChange}
+        handleGuildBalanceChanges={handleGuildBalanceChanges}
+        handleEscrowBalanceChanges={handleEscrowBalanceChanges}
+        /> : <div style={{marginTop: 10, marginBottom: 10}}>No Guild Kick Proposals</div>)}</TabPanel>
+      <TabPanel value="4">{(allProposalsList.length > 0 ? <ProcessedTable 
+        allProposalsList={allProposalsList} 
+        eventCount={allProposalsList.length} 
+        matches={matches} 
+        accountId={accountId}
+        memberStatus={memberStatus}
+        handleProcessCountChange={handleProcessCountChange}
+        handleProposalEventChange={handleProposalEventChange}
+        handleGuildBalanceChanges={handleGuildBalanceChanges}
+        handleEscrowBalanceChanges={handleEscrowBalanceChanges}
+        /> : <div style={{marginTop: 10, marginBottom: 10}}>No Processed Proposals</div>)}</TabPanel>
       </TabContext>) 
   }
-      
-     
-    
 
     </>
   )

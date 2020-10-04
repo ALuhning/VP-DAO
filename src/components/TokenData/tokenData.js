@@ -1,6 +1,6 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import LogoutButton from '../../components/common/LogoutButton/logoutButton'
-import TransferOwnership from '../../components/TransferOwnership/transferOwnership'
+import TransferOwnership from '../FundingProposal/fundingProposal'
 import ActionSelector from '../ActionSelector/actionSelector'
 import TransferList from '../TransferList/transferList'
 import BalanceChart from '../BalanceGraphs/balanceGraph'
@@ -8,6 +8,7 @@ import BalanceChart from '../BalanceGraphs/balanceGraph'
 // Material UI imports
 import { makeStyles } from '@material-ui/core/styles'
 import Card from '@material-ui/core/Card'
+import CardContent from '@material-ui/core/CardContent'
 import Typography from '@material-ui/core/Typography'
 import Grid from '@material-ui/core/Grid'
 import Divider from '@material-ui/core/Divider'
@@ -44,20 +45,21 @@ const useStyles = makeStyles((theme) => ({
     },
   }));
 
+  
 export default function TokenData(props) {
     const [graphData, setGraphData] = useState([])
-
+    
     const classes = useStyles()
     
 
-    const { tokenName, 
+    const { 
       tokenSymbol, 
       precision, 
       initialSupply, 
       currentSupply,
-      accountBalance, 
+      
       tokenOwner, 
-      accountId,
+     
       transferEvents,
       mintEvents,
       burnEvents,
@@ -66,9 +68,58 @@ export default function TokenData(props) {
       handleOwnerChange,
       handleTransferEventChange,
       handleTabValueState, 
-      handleSupplyChange } = props
+      handleSupplyChange,
 
-    let thisAccountBalance = 'Current Balance: ' + accountBalance
+      accountId,
+      memberStatus,
+      depositToken,
+      guildBalance,
+      escrowBalance,
+      proposalEvents,
+      handleProposalEventChange,
+      handleGuildBalanceChanges,
+      handleEscrowBalanceChanges,
+      summoner,
+      currentPeriod,
+      tokenName,
+      userBalance, 
+      minSharePrice } = props
+
+    let guildRow
+    if(guildBalance) {
+    for (let i = 0; i < guildBalance.length; i++) {
+      guildRow = (
+        <li>{guildBalance[i].token} : {guildBalance[i].balance}</li>
+      )
+    }
+    } else { 
+      guildRow = 'no guild balance'
+    }
+    const thisGuildBalance = (
+      <Card>
+        <CardContent>
+        {guildRow}
+        </CardContent>
+      </Card>
+      )
+
+    let escrowRow
+    if(escrowBalance) {
+    for (let i = 0; i < escrowBalance.length; i++) {
+      escrowRow = (
+        <li>{escrowBalance[i].token} : {escrowBalance[i].balance}</li>
+      )
+    }
+  } else {
+    escrowRow = 'no escrow balance'
+  }
+    const thisEscrowBalance = (
+      <Card>
+        <CardContent>
+        {escrowRow}
+        </CardContent>
+      </Card>
+      )
 
     return (
        
@@ -82,29 +133,36 @@ export default function TokenData(props) {
             </Grid>
            
           </Grid>
-            <Typography variant="h5" component="h1" style={{marginTop: 20, marginBottom: 20}}>
-                    {tokenName + '  '}<Chip color="primary" size="small" label={tokenSymbol} />
-              </Typography>
+           
 
             <Grid container direction="row" justify="space-evenly" style={{marginBottom:10, marginTop: 10}}>
                 <Grid item xs={10} sm={6} md={4} lg={3} xl={3} >
+                Current Period: {currentPeriod} | {accountId}: {memberStatus ? 'member' : 'not member'} | {depositToken} Balance: {userBalance}
                      <ActionSelector currentSupply={currentSupply} 
                         handleOwnerChange={handleOwnerChange} 
                         handleSupplyChange={handleSupplyChange} 
                         handleTransferEventChange={handleTransferEventChange}
+                        handleProposalEventChange={handleProposalEventChange}
+                        handleEscrowBalanceChanges={handleEscrowBalanceChanges}
+                        handleGuildBalanceChanges={handleGuildBalanceChanges}
                         handleTabValueState={handleTabValueState}
                         tokenOwner={tokenOwner}
                         accountId={accountId}
-                        accountBalance={accountBalance}
+                        tokenName={tokenName}
+                        depositToken={depositToken}
+                        minSharePrice={minSharePrice}
                       /> 
                 </Grid>
             </Grid>
 
             <Grid container>
-              <Grid item xs={12} sm={12} md={12} lg={12} xl={12} >
-                <Tooltip title="Account Balance" placement="right">
-                  <Chip variant="outlined" label={thisAccountBalance} style={{marginBottom: 10}}/>
-                </Tooltip>
+              <Grid item xs={12} sm={6} md={6} lg={6} xl={6} >
+              <Typography component="h4">Guild Balances</Typography>
+                {thisGuildBalance}
+              </Grid>
+              <Grid item xs={12} sm={6} md={6} lg={6} xl={6} >
+              <Typography component="h4">Escrow Balances</Typography>
+               {thisEscrowBalance}
               </Grid>
             </Grid>
         
@@ -118,9 +176,15 @@ export default function TokenData(props) {
                   tokenOwner={tokenOwner} 
                   accountId={accountId} 
                   initialSupply={initialSupply} 
-                  accountBalance={accountBalance}
+                  guildBalance={guildBalance}
                   handleTabValueState={handleTabValueState}
                   tabValue={tabValue}
+
+                  handleProposalEventChange={handleProposalEventChange}
+                  handleGuildBalanceChanges={handleGuildBalanceChanges}
+                  handleEscrowBalanceChanges={handleEscrowBalanceChanges}
+                  proposalEvents={proposalEvents}
+                  memberStatus={memberStatus}
                 />
               </Grid>
             </Grid>
@@ -137,9 +201,9 @@ export default function TokenData(props) {
         </Grid>
 
         <Grid item xs={6} sm={6} md={6} lg={6} xl={6}>
-         <Typography variant="button" display="block">Token Owner</Typography>
+         <Typography variant="button" display="block">Summoner</Typography>
          
-           <Chip variant="outlined" icon={<AccountCircleTwoToneIcon />} label={tokenOwner} />
+           <Chip variant="outlined" icon={<AccountCircleTwoToneIcon />} label={summoner} />
  
         </Grid>
       </Grid>

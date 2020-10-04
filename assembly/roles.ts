@@ -1,9 +1,9 @@
 import { Context, PersistentMap, storage } from 'near-sdk-as'
-import { AccountId } from './ft-types'
+import { AccountId } from './dao-types'
 import {
     ERR_NOT_AUTH_MODERATOR_ADD,
     ERR_NOT_AUTH_MODERATOR_REMOVE
-} from './ft-error-messages'
+} from './dao-error-messages'
 
 const moderators = new PersistentMap<string, string>("m:")
 

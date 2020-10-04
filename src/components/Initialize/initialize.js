@@ -69,19 +69,28 @@ export default function Initialize(props) {
             })
           }
       }, [initialized, finished])
-
   
     const onSubmit = async (values) => {
         event.preventDefault()
         setFinish(false)
-        const { tokenName, tokenSymbol, precision, initialSupply } = values
+        const { approvedTokens, periodDuration, votingPeriodLength, gracePeriodLength, dilutionBound, proposalDeposit, processingReward, minSharePrice } = values
         console.log('values', values)
+
+        let arrayApprovedTokens = []
+          approvedTokens.split(',').map(item => {
+          arrayApprovedTokens.push(item.trim())
+        })
+        console.log('arrayApprovedTokens', arrayApprovedTokens)
      
         let finished = await window.contract.init({
-                            name: tokenName,
-                            symbol: tokenSymbol,
-                            precision: precision,
-                            initialSupply: initialSupply
+                            _approvedTokens: arrayApprovedTokens,
+                            periodDuration: parseInt(periodDuration),
+                            votingPeriodLength: votingPeriodLength,
+                            gracePeriodLength: gracePeriodLength,
+                            proposalDeposit: proposalDeposit,
+                            dilutionBound: dilutionBound,
+                            processingReward: processingReward,
+                            minSharePrice: parseInt(minSharePrice)
                         }, process.env.DEFAULT_GAS_VALUE)
         setFinish(finished)
     }
@@ -96,54 +105,114 @@ export default function Initialize(props) {
             <LogoutButton accountId={accountId} />
                <div className={classes.root}>
                  <Card className={classes.customCard}>
-                  <Typography variant="h5" component="h1" >Fungible Token Creator</Typography>
+                  <Typography variant="h5" component="h1" >DAO Setup</Typography>
                   <form className={classes.rootForm} noValidate autoComplete="off" onSubmit={handleSubmit(onSubmit)}>
 
                     <TextField
-                      id="token-name"
+                      id="approved-tokens"
                       variant="outlined"
-                      name="tokenName"
-                      label="Token Name"
+                      name="approvedTokens"
+                      label="Approved Tokens"
                       inputRef={register({
                           required: true,
                       })}
-                      placeholder="e.g. Vital Point Coin"
+                      placeholder="vpc.vitalpointai.testnet"
                     />
                       
                     <TextField
-                      id="token-symbol"
+                      id="period-duration"
                       variant="outlined"
-                      name="tokenSymbol"
-                      label="Token Symbol"
+                      name="periodDuration"
+                      label="Period Duration"
                       required={true}
                       inputRef={register({
                           required: true
                       })}
-                      placeholder="e.g. VPC"
+                      placeholder="14400"
+                      InputProps={{
+                        endAdornment: <InputAdornment position="end">Seconds</InputAdornment>,
+                    }}
                     />
 
                     <TextField
-                      id="token-precision"
+                      id="voting-period-length"
                       variant="outlined"
-                      name="precision"
-                      label="Precision"
-                      placeholder="18"
+                      name="votingPeriodLength"
+                      label="Voting Period Length"
+                      placeholder="42"
                       inputRef={register({
                           required: true,
                       })}
                       InputProps={{
-                          endAdornment: <InputAdornment position="end">Decimals</InputAdornment>,
+                          endAdornment: <InputAdornment position="end">Periods</InputAdornment>,
                       }}
                     />
 
                     <TextField
-                    id="token-supply"
+                    id="grace-period-length"
                     variant="outlined"
-                    name="initialSupply"
-                    label="Initial Supply"
-                    placeholder="e.g. 1000000000"
+                    name="gracePeriodLength"
+                    label="Grace Period Length"
+                    placeholder="42"
                     inputRef={register({
                         required: true, 
+                    })}
+                    InputProps={{
+                      endAdornment: <InputAdornment position="end">Periods</InputAdornment>,
+                      }}
+                    />
+
+                    <TextField
+                    id="proposal-deposit"
+                    variant="outlined"
+                    name="proposalDeposit"
+                    label="Proposal Deposit"
+                    placeholder="10"
+                    inputRef={register({
+                        required: true, 
+                    })}
+                    InputProps={{
+                      endAdornment: <InputAdornment position="end">Tokens</InputAdornment>,
+                      }}
+                    />
+
+                    <TextField
+                    id="dilution-bound"
+                    variant="outlined"
+                    name="dilutionBound"
+                    label="Dilution Bound"
+                    placeholder="3"
+                    inputRef={register({
+                        required: true, 
+                    })}
+                    InputProps={{
+                      endAdornment: <InputAdornment position="end">Tokens</InputAdornment>,
+                      }}
+                    />
+
+                    <TextField
+                    id="processing-reward"
+                    variant="outlined"
+                    name="processingReward"
+                    label="Processing Reward"
+                    placeholder="1"
+                    inputRef={register({
+                        required: true, 
+                    })}
+                    InputProps={{
+                      endAdornment: <InputAdornment position="end">Tokens</InputAdornment>,
+                      }}
+                    />
+
+                    <TextField
+                    id="min-share-price"
+                    variant="outlined"
+                    name="minSharePrice"
+                    label="Minimum Share Tribute"
+                    placeholder="1"
+                    inputRef={register({
+                        required: true,
+                        min: 0
                     })}
                     InputProps={{
                       endAdornment: <InputAdornment position="end">Tokens</InputAdornment>,

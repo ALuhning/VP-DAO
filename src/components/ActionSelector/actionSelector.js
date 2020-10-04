@@ -1,8 +1,11 @@
 import React, { useState } from 'react'
 import { makeStyles } from '@material-ui/core/styles'
 import Transfer from '../Transfer/transfer'
-import TransferOwnership from '../TransferOwnership/transferOwnership'
-import Mint from '../Mint/mint'
+import FundingProposal from '../FundingProposal/fundingProposal'
+import WhiteListProposal from '../WhiteListProposal/whitelistProposal'
+import GuildKickProposal from '../GuildKickProposal/guildKickProposal'
+import MemberProposal from '../MemberProposal/memberProposal'
+import Mint from '../Mint/Mint'
 import Burn from '../Burn/burn'
 
 // Material UI Components
@@ -37,18 +40,25 @@ const useStyles = makeStyles((theme) => ({
 export default function ActionSelector(props) {
   const classes = useStyles();
   const [transferClicked, setTransferClicked] = useState(false)
-  const [ownershipClicked, setOwnershipClicked] = useState(false)
-  const [mintClicked, setMintClicked] = useState(false)
-  const [burnClicked, setBurnClicked] = useState(false)
+  const [memberProposalClicked, setMemberProposalClicked] = useState(false)
+  const [fundingProposalClicked, setFundingProposalClicked] = useState(false)
+  const [whiteListClicked, setWhiteListClicked] = useState(false)
+  const [guildKickClicked, setGuildKickClicked] = useState(false)
   const [expanded, setExpanded] = useState(false)
   
   const { currentSupply, 
     handleSupplyChange, 
     handleOwnerChange, 
     handleTransferEventChange,
+    handleProposalEventChange,
+    handleGuildBalanceChanges,
+    handleEscrowBalanceChanges,
     handleTabValueState,
     tokenOwner,
     accountId,
+    depositToken,
+    tokenName,
+    minSharePrice,
     accountBalance } = props
 
   const handleTransferClick = () => {
@@ -57,38 +67,48 @@ export default function ActionSelector(props) {
     setTransferClicked(true)
   };
 
-  const handleOwnershipClick = () => {
+  const handleFundingProposalClick = () => {
     handleExpanded()
-    handleTabValueState('4')
-    setOwnershipClicked(true)
+    handleTabValueState('1')
+    setFundingProposalClicked(true)
   };
 
-  const handleMintClick = () => {
+  const handleWhiteListClick = () => {
     handleExpanded()
     handleTabValueState('2')
-    setMintClicked(true)
+    setWhiteListClicked(true)
   };
 
-  const handleBurnClick = () => {
+  const handleGuildKickClick = () => {
     handleExpanded()
     handleTabValueState('3')
-    setBurnClicked(true)
+    setGuildKickClicked(true)
   };
 
-  function handleMintClickState(property) {
-    setMintClicked(property)
+  const handleMemberProposalClick = () => {
+    handleExpanded()
+    handleTabValueState('1')
+    setMemberProposalClicked(true)
+  };
+
+  function handleWhiteListClickState(property) {
+    setWhiteListClicked(property)
   }
 
-  function handleBurnClickState(property) {
-    setBurnClicked(property)
+  function handleGuildKickClickState(property) {
+    setGuildKickClicked(property)
   }
 
   function handleTransferClickState(property) {
     setTransferClicked(property)
   }
 
-  function handleTransferOwnershipClickState(property) {
-    setOwnershipClicked(property)
+  function handleFundingProposalClickState(property) {
+    setFundingProposalClicked(property)
+  }
+
+  function handleMemberProposalClickState(property) {
+    setMemberProposalClicked(property)
   }
 
   function handleExpanded() {
@@ -104,60 +124,89 @@ export default function ActionSelector(props) {
           aria-controls="panel1a-content"
           id="panel1a-header"         
         >
-          <Typography className={classes.heading}>Actions</Typography>
+          <Typography className={classes.heading}>Proposals</Typography>
         </AccordionSummary>
         <AccordionDetails>
           {tokenOwner==accountId 
             ?
             ( <List component="nav" aria-label="main mailbox folders">
-              <ListItem button onClick={handleTransferClick}>
+              <ListItem button onClick={handleMemberProposalClick}>
               <ListItemIcon><LabelImportantIcon color="primary" /></ListItemIcon>
-              <ListItemText primary="Transfer Tokens" />
+              <ListItemText primary="Member Proposal" />
             </ListItem>
-            <ListItem button onClick={handleOwnershipClick}>
+            <ListItem button onClick={handleFundingProposalClick}>
               <ListItemIcon><TransferWithinAStationTwoToneIcon color="secondary" /></ListItemIcon>
-              <ListItemText primary="Transfer Ownership" />
+              <ListItemText primary="Request Funding" />
             </ListItem>
-            <ListItem button onClick={handleMintClick}>
+            <ListItem button onClick={handleWhiteListClick}>
               <ListItemIcon><AddCircleIcon color='action' /></ListItemIcon>
-              <ListItemText primary="Mint Tokens" />
+              <ListItemText primary="Whitelist Token" />
             </ListItem>
-            <ListItem button onClick={handleBurnClick}>
+            <ListItem button onClick={handleGuildKickClick}>
               <ListItemIcon><FireplaceIcon color='secondary' /></ListItemIcon>
-              <ListItemText primary="Burn Tokens" />
+              <ListItemText primary="Remove Member" />
             </ListItem>
+            <ListItem button onClick={handleGuildKickClick}>
+            <ListItemIcon><FireplaceIcon color='secondary' /></ListItemIcon>
+            <ListItemText primary="Trade" />
+          </ListItem>
             </List>)
           : 
-          (<List component="nav" aria-label="main mailbox folders">
-            <ListItem button onClick={handleTransferClick}>
+          ( <List component="nav" aria-label="main mailbox folders">
+              <ListItem button onClick={handleMemberProposalClick}>
               <ListItemIcon><LabelImportantIcon color="primary" /></ListItemIcon>
-              <ListItemText primary="Transfer Tokens" />
+              <ListItemText primary="Member Proposal" />
             </ListItem>
-          </List>)
+            <ListItem button onClick={handleFundingProposalClick}>
+              <ListItemIcon><TransferWithinAStationTwoToneIcon color="secondary" /></ListItemIcon>
+              <ListItemText primary="Request Funding" />
+            </ListItem>
+            <ListItem button onClick={handleWhiteListClick}>
+              <ListItemIcon><AddCircleIcon color='action' /></ListItemIcon>
+              <ListItemText primary="Whitelist Token" />
+            </ListItem>
+            <ListItem button onClick={handleGuildKickClick}>
+              <ListItemIcon><FireplaceIcon color='secondary' /></ListItemIcon>
+              <ListItemText primary="Remove Member" />
+            </ListItem>
+            <ListItem button onClick={handleGuildKickClick}>
+            <ListItemIcon><FireplaceIcon color='secondary' /></ListItemIcon>
+            <ListItemText primary="Trade" />
+          </ListItem>
+            </List>)
         }
         </AccordionDetails>
       </Accordion>
 
-      {mintClicked ? <Mint currentSupply={currentSupply} 
-      handleMintClickState={handleMintClickState} 
-      handleSupplyChange={handleSupplyChange} 
+      {whiteListClicked ? <WhiteListProposal 
+      handleProposalEventChange={handleProposalEventChange}
+      handleWhiteListClickState={handleWhiteListClickState}  
       handleTabValueState={handleTabValueState}/> : null }
 
-      {burnClicked ? <Burn currentSupply={currentSupply} 
-      handleBurnClickState={handleBurnClickState} 
-      handleSupplyChange={handleSupplyChange} 
+      {guildKickClicked ? <GuildKickProposal
+      handleProposalEventChange={handleProposalEventChange}
+      handleGuildKickClickState={handleGuildKickClickState} 
       handleTabValueState={handleTabValueState}/> : null }
 
-      {ownershipClicked ? <TransferOwnership handleTransferOwnershipClickState={handleTransferOwnershipClickState} 
-      handleOwnerChange={handleOwnerChange} 
+      {fundingProposalClicked ? <FundingProposal 
+      handleProposalEventChange={handleProposalEventChange}
+      handleGuildBalanceChanges={handleGuildBalanceChanges}
+      handleEscrowBalanceChanges={handleEscrowBalanceChanges}
+      handleFundingProposalClickState={handleFundingProposalClickState}
       handleTabValueState={handleTabValueState}
+      depositToken={depositToken}
       accountId={accountId}/> : null }
 
-      {transferClicked ? <Transfer handleTransferClickState={handleTransferClickState} 
-      handleTransferEventChange={handleTransferEventChange} 
+      {memberProposalClicked ? <MemberProposal 
+      handleProposalEventChange={handleProposalEventChange}
+      handleGuildBalanceChanges={handleGuildBalanceChanges}
+      handleEscrowBalanceChanges={handleEscrowBalanceChanges}
+      handleMemberProposalClickState={handleMemberProposalClickState} 
       handleTabValueState={handleTabValueState} 
       accountId={accountId} 
-      accountBalance={accountBalance}/> : null }
+      depositToken={depositToken}
+      tokenName={tokenName}
+      minSharePrice={minSharePrice}/> : null }
     </>
   );
 }

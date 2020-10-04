@@ -1,5 +1,5 @@
 {
-  "name": "token-access",
+  "name": "dao",
   "version": "0.1.0",
   "license": "UNLICENSED",
   "scripts": {
@@ -30,8 +30,8 @@
     "gh-pages": "^3.0.0",
     "jest": "^26.0.1",
     "jest-environment-node": "^26.0.0",
-    "near-cli": "^1.0.3",
-    "near-sdk-as": "^1.2.0",
+    "near-cli": "^1.2.0",
+    "near-sdk-as": "^2.0.0",
     "nodemon": "^2.0.3",
     "parcel-bundler": "^1.12.4",
     "react-test-renderer": "^16.13.1"
@@ -41,8 +41,10 @@
     "@material-ui/icons": "^4.9.1",
     "@material-ui/lab": "^4.0.0-alpha.56",
     "@types/react": "^16.8.6",
+    "big.js": "^5.2.2",
     "fontsource-roboto": "^3.0.3",
-    "near-api-js": "^0.29.0",
+    "near-api-js": "^0.30.0",
+    "near-vm": "^1.1.0",
     "react": "^16.8.0",
     "react-charts": "^2.0.0-beta.7",
     "react-dom": "^16.8.0",
