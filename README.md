@@ -13,12 +13,14 @@ For this project, we needed a currency we could freely transfer around so we dep
 
 The video below doesn't cover every aspect of the Moloch DAO, but it will give you a good overview.  The port is not 100% complete yet (still need to hook up ragequit, guildkick and sort out some gas issues) but it's nearing MVP for member and funding proposals.  Next steps will see some interface work to make it more intuitive/usable.
 
+My apologies for the rather rushed demo with no audio explanation - it's currently 2:30am after a very long day - best I can do for now.
+
 Project Demo
 ----
 
 Here's a video demo of the Moloch DAO port and NEAR NEP-21 Fungible Token Integration on NEAR:
 
-[![Vital Point Guild - Fungible Token Creation on NEAR](https://vitalpoint.ai/wp-content/uploads/2020/08/youtube-preview.png)](https://youtu.be/CGhPRDT1lnw "Building and Issuing Fungible Tokens on NEAR")
+[![Vital Point Guild - VP DAO - a Moloch v2 DAO on NEAR](https://vitalpoint.ai/wp-content/uploads/2020/10/vp-dao.png)](https://youtu.be/giyRMumarFs "Vital Point DAO - a Moloch V2 DAO running on NEAR")
 
 Read more about our (https://vitalpoint.ai/decentralized-community-platform/ "Decentralized Community Platform") initiative and join our Guild to get involved in this project and others.
 
