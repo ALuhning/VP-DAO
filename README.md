@@ -1,7 +1,14 @@
 [![Vital Point Guild](https://vitalpoint.ai/wp-content/uploads/2020/08/header-github.png)](https://vitalpoint.ai "Vital Point Guild")
 
-## BUILDING AND ISSUING FUNGIBLE TOKENS ON NEAR
+## PORTING MOLOCH DAO V2 TO NEAR FOR INTEGRATION IN DECENTRALIZED COMMUNITIES
 ----
+
+Communities may require the ability to coordinate funds and resources.  As an example, let's consider how guilds interact in the NEAR Guilds community.  Each guild has the option of submitting proposals to the community for funding consideration.  
+
+One option to deciding whether to fund the proposal is to have a human committee sit around and discuss each proposal and then arbitrarily or based on some set criteria decide to award the funding from the resource pool.
+
+A better option considering we are interested in web 3.0 technologies is to provide a module that facilitates coordination and resource allocation through a decentralized autonomous organization (DAO).  This project ported Moloch v2 to run on NEAR and it could be the start of the answer.
+
 
 We're going to use NEAR's Fungible Token Standard (NEP-21), and Ethereum's ERC-20 standard as the basis for this project which will do the following:  
 
