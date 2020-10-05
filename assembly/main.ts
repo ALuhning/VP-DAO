@@ -309,11 +309,11 @@ function _unsafeAddToBalance(account: AccountId, token: AccountId, amount: Amoun
     if(userTokenBalances[i].user == account && userTokenBalances[i].token == token) {
       let userCurrent = userTokenBalances[i].balance
       let newUserAmount = u128.add(userCurrent, amount)
-      let oldTokenBalance = userTokenBalances.replace(i, {user: account, token: token, balance: newUserAmount})
+      userTokenBalances.replace(i, {user: account, token: token, balance: newUserAmount})
     } else if(userTokenBalances[i].user == TOTAL && userTokenBalances[i].token == token) {
       let totalCurrent = userTokenBalances[i].balance
       let newTotalAmount = u128.add(totalCurrent, amount)
-      let oldTotalBalance = userTokenBalances.replace(i, {user: TOTAL, token: token, balance: newTotalAmount})
+      userTokenBalances.replace(i, {user: TOTAL, token: token, balance: newTotalAmount})
     } else {
       userTokenBalances.push({user: account, token: token, balance: amount})
     }
@@ -325,12 +325,12 @@ function _unsafeSubtractFromBalance(account: AccountId, token: AccountId, amount
     if(userTokenBalances[i].user == account && userTokenBalances[i].token == token) {
       let userCurrent = userTokenBalances[i].balance
       let newUserAmount = u128.sub(userCurrent, amount)
-      let oldTokenBalance = userTokenBalances.replace(i, {user: account, token: token, balance: newUserAmount})
+      userTokenBalances.replace(i, {user: account, token: token, balance: newUserAmount})
     }
     if(userTokenBalances[i].user == TOTAL && userTokenBalances[i].token == token) {
       let totalCurrent = userTokenBalances[i].balance
       let newTotalAmount = u128.sub(totalCurrent, amount)
-      let oldTotalBalance = userTokenBalances.replace(i, {user: TOTAL, token: token, balance: newTotalAmount})
+      userTokenBalances.replace(i, {user: TOTAL, token: token, balance: newTotalAmount})
     }
   }
 }
@@ -685,6 +685,10 @@ export function getDepositToken(): string {
   return storage.getSome<string>("depositToken")
 }
 
+export function getProposalDeposit(): u128 {
+  return storage.getSome<u128>("proposalDeposit")
+}
+
 function _max(x: u128, y: u128): u128 {
   return u128.gt(x, y) ? x : y
 }
@@ -849,11 +853,8 @@ export function getUserTokenBalanceIndex(user: AccountId): i32 {
  */
 export function getAllFundingRequestEvents(): Array<SubmitProposalEvent> {
   let _frList = new Array<SubmitProposalEvent>();
-  logging.log(submitProposalEvents)
-  logging.log(submitProposalEvents.length)
   if(submitProposalEvents.length != 0) {
     for(let i: i32 = 0; i < submitProposalEvents.length; i++) {
-      logging.log(submitProposalEvents)
       _frList.push(submitProposalEvents[i]);
     }
   }
@@ -874,34 +875,40 @@ export function submitProposal (
     paymentRequested: u128,
     paymentToken: AccountId
 ): u64 {
-  REENTRANTGUARD.nonReentrantOpen()
+ // REENTRANTGUARD.nonReentrantOpen()
   
   assert(u128.le(u128.add(sharesRequested, lootRequested), new u128(MAX_NUMBER_OF_SHARES_AND_LOOT)), ERR_TOO_MANY_SHARES)
   assert(tokenWhiteList.getSome(tributeToken), ERR_NOT_WHITELISTED)
   assert(tokenWhiteList.getSome(paymentToken), ERR_NOT_WHITELISTED_PT)
   assert(env.isValidAccountID(applicant), ERR_INVALID_ACCOUNT_ID)
   assert(applicant != GUILD && applicant != ESCROW && applicant != TOTAL, ERR_RESERVED)
-  assert(members.get(applicant)!=null, ERR_NOT_A_MEMBER)
-  assert(members.getSome(applicant).jailed == u128.Zero, ERR_JAILED)
+  if(members.get(applicant)!=null) {
+    assert(members.getSome(applicant).jailed == u128.Zero, ERR_JAILED)
+  }
   
-  logging.log('applicant ' + applicant)
   if(tributeOffered > u128.Zero && getUserTokenBalance(GUILD, tributeToken) == u128.Zero) {
     assert(u128.lt(totalGuildBankTokens, new u128(MAX_TOKEN_GUILDBANK_COUNT)), ERR_FULL_GUILD_BANK)
   }
 
-  // collect tribute from proposer and store it in the Moloch until the proposal is processed
-   let ftAPI = new tokenAPI()
-   ftAPI.incAllowance(tributeOffered, tributeToken)
-   ftAPI.transferFrom(Context.sender, MOLOCH_CONTRACT_ACCOUNT, tributeOffered, tributeToken)
-   
-  _unsafeAddToBalance(ESCROW, tributeToken, tributeOffered)
-  logging.log('user token balance '+ getUserTokenBalance(ESCROW, tributeToken).toString())
+  _submitTransfers(tributeOffered, tributeToken)  
 
   let flags = new Array<bool>(7) // [sponsored, processed, didPass, cancelled, whitelist, guildkick, member]
+  if(sharesRequested > u128.Zero){
+    flags[6] = true // member proposal
+  }
 
   _submitProposal(proposalIdentifier, applicant, sharesRequested, lootRequested, tributeOffered, tributeToken, paymentRequested, paymentToken, flags)
-  REENTRANTGUARD.nonReentrantClose()
+ // REENTRANTGUARD.nonReentrantClose()
   return proposalCount - 1
+}
+
+function _submitTransfers(tributeOffered: u128, tributeToken: AccountId): void {
+  // collect tribute from proposer and store it in the Moloch until the proposal is processed
+  let ftAPI = new tokenAPI()
+  ftAPI.incAllowance(tributeOffered, tributeToken)
+  ftAPI.transferFrom(Context.sender, MOLOCH_CONTRACT_ACCOUNT, tributeOffered, tributeToken)
+  
+  _unsafeAddToBalance(ESCROW, tributeToken, tributeOffered)
 }
 
 
@@ -933,28 +940,7 @@ export function submitGuildKickProposal(memberToKick: AccountId, proposalIdentif
   return proposalCount-1
 }
 
-export function submitMemberProposal(applicant: AccountId, shares: u128, tribute: u128, tributeType: string, proposalIdentifier: string): u64 {
-  REENTRANTGUARD.nonReentrantOpen()
-  assert(env.isValidAccountID(applicant), ERR_INVALID_ACCOUNT_ID)  
-  assert(members.get(applicant)==null, ERR_ALREADY_MEMBER)
-  assert(shares > u128.Zero, ERR_MUSTBE_GREATERTHAN_ZERO)
-  assert(tribute > u128.Zero, ERR_MUSTBE_GREATERTHAN_ZERO)
 
-  // collect tribute from proposer and store it in the Moloch until the proposal is processed
-  let ftAPI = new tokenAPI()
-  ftAPI.incAllowance(tribute, tributeType)
-  ftAPI.transferFrom(Context.sender, MOLOCH_CONTRACT_ACCOUNT, tribute, tributeType)
-  
- _unsafeAddToBalance(ESCROW, tributeType, tribute)
- logging.log('user member token balance '+ getUserTokenBalance(ESCROW, tributeType).toString())
-
-  let flags = new Array<bool>(7) // [sponsored, processed, didPass, cancelled, whitelist, guildkick, member]
-  flags[6] = true; // member Proposal
-  
-  _submitProposal(proposalIdentifier, applicant, shares, u128.Zero, tribute, tributeType, u128.Zero, '', flags)
-  REENTRANTGUARD.nonReentrantClose()
-  return proposalCount-1
-}
 
 
 function _submitProposal(
@@ -989,59 +975,54 @@ function _submitProposal(
     Context.blockIndex
   ))
   
-  let proposalSubmission = Context.blockIndex
- 
-  let memberAddress: AccountId = Context.sender
-  let thisMember = memberAddressByDelegatekey.get(Context.sender, 'false')!
-  if (thisMember != 'false'){
-  let memberAddress: AccountId = memberAddressByDelegatekey.getSome(Context.sender)
+  let memberAddress: AccountId
+  if(memberAddressByDelegatekey.get(Context.sender)!=null) {
+    memberAddress = memberAddressByDelegatekey.getSome(Context.sender)
+  } else {
+    memberAddress = Context.sender
   }
-  submitProposalEvent(proposalIdentifier, applicant, sharesRequested, lootRequested, tributeOffered, tributeToken, paymentRequested, paymentToken, flags, proposalCount, Context.predecessor, memberAddress, proposalSubmission )
+
+  submitProposalEvent(proposalIdentifier, applicant, sharesRequested, lootRequested, tributeOffered, tributeToken, paymentRequested, paymentToken, flags, proposalCount, Context.predecessor, memberAddress, Context.blockIndex )
   proposalCount += 1
 }
 
-export function sponsorProposal(proposalIdentifier: string): void {
+export function sponsorProposal(proposalIdentifier: string, proposalDeposit: u128, depositToken: AccountId): void {
   REENTRANTGUARD.nonReentrantOpen()
-  assert(onlyDelegate(Context.predecessor), ERR_NOT_DELEGATE)
+  assert(onlyDelegate(Context.predecessor), 'not a delegate')
 
-  let proposalId: i32 = getProposalIndex(proposalIdentifier)
-  logging.log('proposal Id ' + proposalId.toString())
-
+  let proposalId = getProposalIndex(proposalIdentifier)
+  
   // collect proposal deposit from sponsor and store it in the Moloch until the proposal is processed
-  let ftAPI = new tokenAPI()
-  let proposalDeposit = storage.getSome<u128>('proposalDeposit')
-  let depositToken = storage.getSome<string>('depositToken')
-  logging.log('proposalDeposit ' + proposalDeposit.toString())
-  logging.log('deposit token ' + depositToken)
+  let ftAPI = new tokenAPI()  
   ftAPI.incAllowance(proposalDeposit, depositToken)
   ftAPI.transferFrom(Context.sender, MOLOCH_CONTRACT_ACCOUNT, proposalDeposit, depositToken)
   
   _unsafeAddToBalance(ESCROW, depositToken, proposalDeposit)
 
   let proposal = proposals[proposalId]
-  assert(proposal.proposalIdentifier == proposalIdentifier, ERR_NOT_RIGHT_PROPOSAL)
-  assert(env.isValidAccountID(proposal.proposer), ERR_INVALID_ACCOUNT_ID)
-  assert(!proposal.flags[0], ERR_ALREADY_SPONSORED)
-  assert(!proposal.flags[3], ERR_PROPOSAL_CANCELLED)
+  assert(proposal.proposalIdentifier == proposalIdentifier, 'not right proposal')
+  assert(env.isValidAccountID(proposal.proposer), 'invalid account ID')
+  assert(!proposal.flags[0], 'already sponsored')
+  assert(!proposal.flags[3], 'proposal cancelled')
  
   if(members.get(proposal.applicant)!=null){
-    assert(members.getSome(proposal.applicant).jailed == u128.Zero, ERR_JAILED)
+    assert(members.getSome(proposal.applicant).jailed == u128.Zero, 'member jailed')
   }
 
   if(proposal.tributeOffered > u128.Zero && getUserTokenBalance(GUILD, proposal.tributeToken) == u128.Zero ) {
-    assert(u128.lt(totalGuildBankTokens, new u128(MAX_TOKEN_GUILDBANK_COUNT)), ERR_FULL_GUILD_BANK)
+    assert(u128.lt(totalGuildBankTokens, new u128(MAX_TOKEN_GUILDBANK_COUNT)), 'guild bank full')
   }
   
   // Whitelist proposal
   if(proposal.flags[4]) {
-    assert(!tokenWhiteList.getSome(proposal.tributeToken), ERR_ALREADY_WHITELISTED)
-    assert(!proposedToWhiteList.getSome(proposal.tributeToken), ERR_WHITELIST_PROPOSED)
-    assert(approvedTokens.length < MAX_TOKEN_WHITELIST_COUNT, ERR_CANNOT_SPONSOR_MORE)
+    assert(!tokenWhiteList.getSome(proposal.tributeToken), 'already whitelisted')
+    assert(!proposedToWhiteList.getSome(proposal.tributeToken), 'whitelist proposed already')
+    assert(approvedTokens.length < MAX_TOKEN_WHITELIST_COUNT, 'can not sponsor more')
     proposedToWhiteList.set(proposal.tributeToken, true)
 
     //Guild Kick Proposal
   } else if (proposal.flags[5]) {
-    assert(!proposedToKick.getSome(proposal.applicant), ERR_PROPOSED_KICK)
+    assert(!proposedToKick.getSome(proposal.applicant), 'proposed to kick')
     proposedToKick.set(proposal.applicant, true)
   }
 
@@ -1050,35 +1031,19 @@ export function sponsorProposal(proposalIdentifier: string): void {
     new u128(getCurrentPeriod()), 
     new u128(proposalQueue.length) == u128.Zero ? u128.Zero : proposals[proposalQueue[proposalQueue.length - 1]].startingPeriod
   )
-  let startingPeriod: u128 = u128.add(max, new u128(1))
-  logging.log('starting period ' + startingPeriod.toString())
+  let startingPeriod = u128.add(max, new u128(1))
   
   let memberAddress = memberAddressByDelegatekey.getSome(Context.predecessor)
-  logging.log('member Address' + memberAddress)
 
   let flags = proposal.flags // [sponsored, processed, didPass, cancelled, whitelist, guildkick, member]
   flags[0] = true; //sponsored
-  logging.log('proposal flags ' + flags.toString())
 
-  proposals.replace(proposalId, new Proposal(
-    proposal.proposalIdentifier,
-    proposal.applicant,
-    proposal.proposer,
-    memberAddress,
-    proposal.sharesRequested,
-    proposal.lootRequested,
-    proposal.tributeOffered,
-    proposal.tributeToken,
-    proposal.paymentRequested,
-    proposal.paymentToken,
-    proposalId,
-    startingPeriod,
-    proposal.yesVotes,
-    proposal.noVotes,
-    flags,
-    proposal.maxTotalSharesAndLootAtYesVote,
-    proposal.proposalSubmission
-  ))
+  proposal.flags = flags
+  proposal.startingPeriod = startingPeriod
+  proposal.sponsor = memberAddress
+
+    logging.log('proposal flags ' + proposal.flags.toString())
+   proposals.replace(proposalId, proposal)  
 
   // append proposal to queue
   proposalQueue.push(proposalId)
@@ -1106,13 +1071,8 @@ export function submitVote(proposalIdentifier: string, vote: string): void {
   let existingVote = getMemberProposalVote(Context.predecessor, proposalIdentifier)
 
   assert(existingVote == 'no vote yet', ERR_ALREADY_VOTED)
-  
-  let thisVote = new UserVote()
-  thisVote.proposalIdentifier = proposalIdentifier
-  thisVote.user = Context.predecessor
-  thisVote.vote = vote
 
-  votesByMember.push(thisVote)
+  votesByMember.push({user: Context.predecessor, proposalIdentifier: proposalIdentifier, vote: vote})
 
   if(vote == 'yes') {
     let newYesVotes = u128.add(proposal.yesVotes, member.shares)
@@ -1120,6 +1080,14 @@ export function submitVote(proposalIdentifier: string, vote: string): void {
     //set highest index (latest) yes vote - must be processed for member to ragequit
     if(proposalIndex > member.highestIndexYesVote) {
       member.highestIndexYesVote = proposalIndex
+      members.set(memberAddress, new Member(
+        member.delegateKey,
+        member.shares, 
+        member.loot, 
+        true,
+        member.highestIndexYesVote,
+        member.jailed
+        ))
     }
 
     // set maximum of total shares encountered at a yes vote - used to bound dilution for yes voters
@@ -1129,49 +1097,17 @@ export function submitVote(proposalIdentifier: string, vote: string): void {
     } else {
       newmaxTotalSharesAndLootAtYesVote = proposal.maxTotalSharesAndLootAtYesVote
     }
-
-    proposals.replace(proposalIndex, new Proposal(
-      proposal.proposalIdentifier,
-      proposal.applicant,
-      proposal.proposer,
-      proposal.sponsor,
-      proposal.sharesRequested,
-      proposal.lootRequested,
-      proposal.tributeOffered,
-      proposal.tributeToken,
-      proposal.paymentRequested,
-      proposal.paymentToken,
-      proposal.proposalId,
-      proposal.startingPeriod,
-      newYesVotes,
-      proposal.noVotes,
-      proposal.flags,
-      newmaxTotalSharesAndLootAtYesVote,
-      proposal.proposalSubmission
-    ))
+    proposal.yesVotes = newYesVotes
+    proposal.votesByMember = votesByMember
+    proposal.maxTotalSharesAndLootAtYesVote = newmaxTotalSharesAndLootAtYesVote
+    proposals.replace(proposalIndex, proposal)
 
   } else if (vote == 'no') {
     let newNoVotes = u128.add(proposal.noVotes, member.shares)
 
-    proposals.replace(proposalIndex, new Proposal(
-      proposal.proposalIdentifier,
-      proposal.applicant,
-      proposal.proposer,
-      proposal.sponsor,
-      proposal.sharesRequested,
-      proposal.lootRequested,
-      proposal.tributeOffered,
-      proposal.tributeToken,
-      proposal.paymentRequested,
-      proposal.paymentToken,
-      proposal.proposalId,
-      proposal.startingPeriod,
-      proposal.yesVotes,
-      newNoVotes,
-      proposal.flags,
-      proposal.maxTotalSharesAndLootAtYesVote,
-      proposal.proposalSubmission
-    ))
+    proposal.noVotes = newNoVotes
+
+    proposals.replace(proposalIndex, proposal)
     
   }
 
@@ -1181,8 +1117,8 @@ export function submitVote(proposalIdentifier: string, vote: string): void {
 }
 
 
-export function processProposal(proposalIdentifier: string): void {
-  REENTRANTGUARD.nonReentrantOpen()
+export function processProposal(proposalIdentifier: string): bool {
+ // REENTRANTGUARD.nonReentrantOpen()
   let proposalIndex = getProposalIndex(proposalIdentifier)
   _validateProposalForProcessing(proposalIndex)
   
@@ -1194,27 +1130,10 @@ export function processProposal(proposalIdentifier: string): void {
   let flags = proposal.flags // [sponsored, processed, didPass, cancelled, whitelist, guildkick, member]
   flags[1] = true; //processed
 
-  proposals.replace(proposalIndex, new Proposal(
-    proposal.proposalIdentifier,
-    proposal.applicant,
-    proposal.proposer,
-    proposal.sponsor,
-    proposal.sharesRequested,
-    proposal.lootRequested,
-    proposal.tributeOffered,
-    proposal.tributeToken,
-    proposal.paymentRequested,
-    proposal.paymentToken,
-    proposal.proposalId,
-    proposal.startingPeriod,
-    proposal.yesVotes,
-    proposal.noVotes,
-    flags,
-    proposal.maxTotalSharesAndLootAtYesVote,
-    proposal.proposalSubmission
-  ))
+  proposal.flags = flags
+  proposals.replace(proposalId, proposal)
 
-  let didPass = _didPass(proposalIndex)
+  let didPass = _didPass(proposalId)
 
   //Make the proposal fail if the new total number of shares and loot exceeds the limit
   let firstAdd = u128.add(totalShares, totalLoot)
@@ -1233,31 +1152,19 @@ export function processProposal(proposalIdentifier: string): void {
     didPass = false
   }
 
-  // PROPOSAL PASSED
-  if(didPass) {
+  return didPass
+}
+
+  export function proposalPassed(proposalIdentifier: string): void {
+
+    let proposalIndex = getProposalIndex(proposalIdentifier)
+    let proposalId = proposalQueue[proposalIndex]
+    let proposal = proposals[proposalId]
 
     let flags = proposal.flags // [sponsored, processed, didPass, cancelled, whitelist, guildkick]
     flags[2] = true; //didPass
-
-    proposals.replace(proposalIndex, new Proposal(
-      proposal.proposalIdentifier,
-      proposal.applicant,
-      proposal.proposer,
-      proposal.sponsor,
-      proposal.sharesRequested,
-      proposal.lootRequested,
-      proposal.tributeOffered,
-      proposal.tributeToken,
-      proposal.paymentRequested,
-      proposal.paymentToken,
-      proposal.proposalId,
-      proposal.startingPeriod,
-      proposal.yesVotes,
-      proposal.noVotes,
-      flags,
-      proposal.maxTotalSharesAndLootAtYesVote,
-      proposal.proposalSubmission
-    ))
+    proposal.flags = flags
+    proposals.replace(proposalId, proposal)
 
     if(members.get(proposal.applicant)!=null) {
       // if the applicant is already a member, add to their existing shares and loot
@@ -1318,17 +1225,21 @@ export function processProposal(proposalIdentifier: string): void {
     if(getUserTokenBalance(GUILD, proposal.paymentToken) == u128.Zero && u128.gt(proposal.paymentRequested, u128.Zero)) {
       totalGuildBankTokens = u128.sub(totalGuildBankTokens, new u128(1))
     }
+  }
 
-    //Proposal FAILED
-  } else {
+export function proposalFailed(proposalIdentifier: string): void {
+    let proposalIndex = getProposalIndex(proposalIdentifier)
+    let proposalId = proposalQueue[proposalIndex]
+    let proposal = proposals[proposalId]
+   
     //return all tokens to the proposer (not the applicant, because funds come from the proposer)
     _unsafeInternalTransfer(ESCROW, proposal.proposer, proposal.tributeToken, proposal.tributeOffered)
-  }
+  
 
   _returnDeposit(proposal.sponsor)
 
-  processProposalEvent(proposalIndex, proposalId, didPass)
-  REENTRANTGUARD.nonReentrantClose()
+  //processProposalEvent(proposalIndex, proposalId, didPass)
+//  REENTRANTGUARD.nonReentrantClose()
 }
 
 
@@ -1344,28 +1255,10 @@ export function processWhitelistProposal(proposalIdentifier: string): void {
 
   let flags = proposal.flags // [sponsored, processed, didPass, cancelled, whitelist, guildkick]
   flags[1] = true; //processed
+  proposal.flags = flags
+  proposals.replace(proposalId,proposal)
 
-  proposals.replace(proposalIndex, new Proposal(
-    proposal.proposalIdentifier,
-    proposal.applicant,
-    proposal.proposer,
-    proposal.sponsor,
-    proposal.sharesRequested,
-    proposal.lootRequested,
-    proposal.tributeOffered,
-    proposal.tributeToken,
-    proposal.paymentRequested,
-    proposal.paymentToken,
-    proposal.proposalId,
-    proposal.startingPeriod,
-    proposal.yesVotes,
-    proposal.noVotes,
-    flags,
-    proposal.maxTotalSharesAndLootAtYesVote,
-    proposal.proposalSubmission
-  ))
-
-  let didPass = _didPass(proposalIndex)
+  let didPass = _didPass(proposalId)
 
   if(approvedTokens.length >= MAX_TOKEN_WHITELIST_COUNT) {
     didPass = false
@@ -1374,26 +1267,8 @@ export function processWhitelistProposal(proposalIdentifier: string): void {
   if (didPass) {
     let flags = proposal.flags // [sponsored, processed, didPass, cancelled, whitelist, guildkick]
     flags[2] = true; //didPass
-    
-    proposals.replace(proposalIndex, new Proposal(
-      proposal.proposalIdentifier,
-      proposal.applicant,
-      proposal.proposer,
-      proposal.sponsor,
-      proposal.sharesRequested,
-      proposal.lootRequested,
-      proposal.tributeOffered,
-      proposal.tributeToken,
-      proposal.paymentRequested,
-      proposal.paymentToken,
-      proposal.proposalId,
-      proposal.startingPeriod,
-      proposal.yesVotes,
-      proposal.noVotes,
-      flags,
-      proposal.maxTotalSharesAndLootAtYesVote,
-      proposal.proposalSubmission
-    ))
+    proposal.flags = flags
+    proposals.replace(proposalId, proposal)
 
     tokenWhiteList.set(proposal.tributeToken, true)
     approvedTokens.push(proposal.tributeToken)
@@ -1421,51 +1296,18 @@ export function processGuildKickProposal(proposalIdentifier: string): void {
   let flags = proposal.flags // [sponsored, processed, didPass, cancelled, whitelist, guildkick]
     flags[1] = true; //processed
    
-    proposals.replace(proposalIndex, new Proposal(
-      proposal.proposalIdentifier,
-      proposal.applicant,
-      proposal.proposer,
-      proposal.sponsor,
-      proposal.sharesRequested,
-      proposal.lootRequested,
-      proposal.tributeOffered,
-      proposal.tributeToken,
-      proposal.paymentRequested,
-      proposal.paymentToken,
-      proposal.proposalId,
-      proposal.startingPeriod,
-      proposal.yesVotes,
-      proposal.noVotes,
-      flags,
-      proposal.maxTotalSharesAndLootAtYesVote,
-      proposal.proposalSubmission
-    ))
+    proposal.flags = flags
+    proposals.replace(proposalId, proposal)
 
-  let didPass = _didPass(proposalIndex)
+  let didPass = _didPass(proposalId)
 
   if(didPass) {
     let flags = proposal.flags // [sponsored, processed, didPass, cancelled, whitelist, guildkick]
     flags[2] = true; //didPass
 
-    proposals.replace(proposalIndex, new Proposal(
-      proposal.proposalIdentifier,
-      proposal.applicant,
-      proposal.proposer,
-      proposal.sponsor,
-      proposal.sharesRequested,
-      proposal.lootRequested,
-      proposal.tributeOffered,
-      proposal.tributeToken,
-      proposal.paymentRequested,
-      proposal.paymentToken,
-      proposal.proposalId,
-      proposal.startingPeriod,
-      proposal.yesVotes,
-      proposal.noVotes,
-      flags,
-      proposal.maxTotalSharesAndLootAtYesVote,
-      proposal.proposalSubmission
-    ))
+    proposal.flags = flags
+    proposals.replace(proposalId, proposal)
+
 
     let member = members.getSome(proposal.applicant)
 
@@ -1475,7 +1317,7 @@ export function processGuildKickProposal(proposalIdentifier: string): void {
     u128.add(member.loot, member.shares), //transfer shares to loot
     true,
     member.highestIndexYesVote,
-    new u128(proposalIndex)
+    new u128(proposalId)
     )
 
     members.set(proposal.applicant, updateMember)
@@ -1511,7 +1353,7 @@ export class tokenAPI {
       token,
       "getTokenName",
       new Uint8Array(0),
-      10000000000000,
+      100,
       u128.Zero)
 
     promise.returnAsResult()
@@ -1524,7 +1366,7 @@ export class tokenAPI {
       token, // contract account Id
       "get_balance", // method
       args.encode(), // serialized contract method arguments as Uint8Array
-      1000000000000, // gas attached to call
+      100, // gas attached to call
       u128.Zero) // attached deposit to be sent with call
 
       promise.returnAsResult()
@@ -1537,7 +1379,7 @@ export class tokenAPI {
       tributeToken, 
       "transfer_from", 
       args.encode(), 
-      1000000000000, 
+      100000000000000, 
       u128.Zero
     )
 
@@ -1552,7 +1394,7 @@ export class tokenAPI {
       tokenContract,
       "inc_allowance",
       args.encode(),
-      1000000000000,
+      100000000000000,
       u128.Zero
     )
     promise.returnAsResult()

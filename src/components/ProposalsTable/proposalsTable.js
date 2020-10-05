@@ -49,6 +49,8 @@ export default function ProposalsTable(props) {
         accountId, 
         loaded,
         memberStatus,
+        depositToken,
+        proposalDeposit,
         handleProposalCountChange,
         handleProposalEventChange,
         handleEscrowBalanceChanges,
@@ -81,21 +83,23 @@ export default function ProposalsTable(props) {
     };
 
     async function handleSponsorAction(proposalIdentifier) {
-        await window.contract.sponsorProposal({
-            proposalIdentifier: proposalIdentifier
-            }, BOATLOAD_OF_GAS)
-            await handleProposalEventChange()
-            await handleGuildBalanceChanges()
-            await handleEscrowBalanceChanges()
+       await window.contract.sponsorProposal({
+            proposalIdentifier: proposalIdentifier,
+            proposalDeposit: proposalDeposit,
+            depositToken: depositToken
+            }, process.env.DEFAULT_GAS_VALUE)
+           await handleProposalEventChange()
+           await handleEscrowBalanceChanges()
+           await handleGuildBalanceChanges()
       };
 
     async function handleCancelAction(proposalIdentifier) {
-        await window.contract.cancelProposal({
+       await window.contract.cancelProposal({
             proposalIdentifier: proposalIdentifier
-            }, BOATLOAD_OF_GAS)
+            }, process.env.DEFAULT_GAS_VALUE)
             await handleProposalEventChange()
-            await handleGuildBalanceChanges()
             await handleEscrowBalanceChanges()
+            await handleGuildBalanceChanges()
         };
 
 
@@ -128,7 +132,6 @@ export default function ProposalsTable(props) {
     async function getProposalType(proposalIdentifier) {
         // flags [sponsored, processed, didPass, cancelled, whitelist, guildkick, member]
         let flags = await window.contract.getProposalFlags({proposalIdentifier: proposalIdentifier})
-        console.log('flags ', flags)
         let status = ''
         if(flags[4]) {
         status = 'Whitelist'
@@ -144,42 +147,15 @@ export default function ProposalsTable(props) {
         }
         return status
     }
-
-    async function getVotingPeriod(proposalIdentifier) {
-        return await window.contract.isVotingPeriod({proposalIdentifier: proposalIdentifier})
-     }
-
-     async function getGracePeriod(proposalIdentifier) {
-        return await window.contract.isGracePeriod({proposalIdentifier: proposalIdentifier})
-     }
-
-     async function getUserVote(proposalIdentifier) {
-        let result = await window.contract.getMemberProposalVote({memberAddress: accountId, proposalIdentifier: proposalIdentifier})
-        if(result == 'no vote yet') {
-            return false
-        } else {
-            return true
-        }
-     }
     
 
     async function resolveStatus(requests) {
         let status
-        let votingPeriod
-        let gracePeriod
-        let userVote
         let proposalType
         let updated = []
         console.log('proposal list here now ', requests)
         for(let i = 0; i < requests.length; i++) {
             status = await getStatus(requests[i][0].requestId)
-            votingPeriod = await getVotingPeriod(requests[i][0].requestId)
-            gracePeriod = await getGracePeriod(requests[i][0].requestId)
-            if(status != 'Submitted' && status != 'Cancelled' && memberStatus) {
-                userVote = await getUserVote(requests[i][0].requestId)
-            } else {
-                userVote = false
-            }
             proposalType = await getProposalType(requests[i][0].requestId)
             console.log('status ', status)
             if(status != 'Sponsored' && status != 'Processed' && status !='Passed' && status != 'Not Passed' && status != 'Cancelled'){
@@ -190,9 +166,6 @@ export default function ProposalsTable(props) {
                 loot: requests[i][0].loot,
                 tribute: requests[i][0].tribute,
                 status: status, 
-                votingPeriod: votingPeriod, 
-                gracePeriod: gracePeriod, 
-                userVote: userVote, 
                 proposalType: proposalType})
             }
             console.log('frl ', updated)
@@ -243,13 +216,8 @@ export default function ProposalsTable(props) {
                         <TableCell className={classes.cell} align="center"><div className={classes.cellText}>
                         {row.status == 'Submitted' && accountId == row.proposer ? 'Awaiting Sponsorship' : null}
                         {(accountId != row.proposer && accountId != row.applicant) && row.status=='Submitted' ? <Button variant="contained" color="primary" onClick={(e) => handleSponsorAction(row.requestId, e)}>Sponsor</Button> : null}
-                        {row.status == 'Sponsored' && row.votingPeriod == true ? <ButtonGroup><Button variant="contained" disabled={row.userVote} color="primary" startIcon={<ThumbUpAlt />} onClick={(e) => handleYesVotingAction(row.requestId, e)}>Yes</Button> <Button variant="contained" disabled={row.userVote} color="secondary" startIcon={<ThumbDownAlt />} onClick={(e) => handleNoVotingAction(row.requestId, e)}>No</Button> <Button variant="contained" disabled={row.userVote} color="secondary" startIcon={<ThumbDownAlt />} onClick={(e) => handleAbstainVotingAction(row.requestId, e)}>Abstain</Button></ButtonGroup> : null }
-                        {row.status == 'Sponsored' && row.gracePeriod == true ? 'Grace' : null } 
-                        {accountId != row.proposer && row.status == 'Sponsored' && row.votingPeriod == false && row.gracePeriod == false ? <Button variant="contained" color="primary" onClick={(e) => handleProcessAction(row.requestId, e)}>Process</Button> : null}
-                        {accountId == row.proposer && row.status == 'Sponsored' ? 'Awaiting Processing' : null }
-                        {row.status == 'Not Passed' || row.status == 'Passed' ? 'Finalized' : null}
                         </div></TableCell>
-                            {(accountId == row.proposer || accountId == row.applicant) && row.status=='Submitted' ? <TableCell className={classes.cell} align="center"><div className={classes.cellText}><Button variant="contained" color="primary" onClick={(e) => handleCancelAction(row.requestId, e)}>Cancel</Button> </div></TableCell>: <TableCell className={classes.cell} align="center"><div className={classes.cellText}>N/A</div></TableCell> } 
+                            {(accountId == row.proposer || accountId == row.applicant) && row.status=='Submitted' ? <TableCell className={classes.cell} align="center"><div className={classes.cellText}><Button variant="contained" color="primary" onClick={() => handleCancelAction(row.requestId)}>Cancel</Button> </div></TableCell>: <TableCell className={classes.cell} align="center"><div className={classes.cellText}>N/A</div></TableCell> } 
                         </TableRow>
                     ))}
                 </TableBody>

@@ -50,7 +50,9 @@ export default function TransferList(props) {
     handleGuildBalanceChanges,
     handleEscrowBalanceChanges,
     proposalEvents,
-    memberStatus
+    memberStatus,
+    depositToken,
+    proposalDeposit
   } = props
 
   const handleChangePage = (event, newPage) => {
@@ -230,6 +232,8 @@ export default function TransferList(props) {
         matches={matches} 
         tokenOwner={tokenOwner} 
         accountId={accountId}
+        depositToken={depositToken}
+        proposalDeposit={proposalDeposit}
         memberStatus={memberStatus}
         handleProposalCountChange={handleProposalCountChange}
         handleProposalEventChange={handleProposalEventChange}
@@ -242,6 +246,8 @@ export default function TransferList(props) {
         matches={matches} 
         accountId={accountId} 
         memberStatus={memberStatus}
+        depositToken={depositToken}
+        proposalDeposit={proposalDeposit}
         handleVotingCountChange={handleVotingCountChange}
         handleProposalEventChange={handleProposalEventChange}
         handleGuildBalanceChanges={handleGuildBalanceChanges}
@@ -253,6 +259,8 @@ export default function TransferList(props) {
         matches={matches} 
         accountId={accountId}
         memberStatus={memberStatus} 
+        depositToken={depositToken}
+        proposalDeposit={proposalDeposit}
         handleQueueCountChange={handleQueueCountChange}
         handleProposalEventChange={handleProposalEventChange}
         handleGuildBalanceChanges={handleGuildBalanceChanges}
@@ -264,6 +272,8 @@ export default function TransferList(props) {
         matches={matches} 
         accountId={accountId}
         memberStatus={memberStatus}
+        depositToken={depositToken}
+        proposalDeposit={proposalDeposit}
         handleProcessCountChange={handleProcessCountChange}
         handleProposalEventChange={handleProposalEventChange}
         handleGuildBalanceChanges={handleGuildBalanceChanges}
@@ -296,6 +306,8 @@ export default function TransferList(props) {
         tokenOwner={tokenOwner} 
         accountId={accountId} 
         memberStatus={memberStatus}
+        depositToken={depositToken}
+        proposalDeposit={proposalDeposit}
         handleProposalCountChange={handleProposalCountChange}
         handleProposalEventChange={handleProposalEventChange}
         handleGuildBalanceChanges={handleGuildBalanceChanges}
@@ -307,6 +319,8 @@ export default function TransferList(props) {
         matches={matches} 
         accountId={accountId} 
         memberStatus={memberStatus}
+        depositToken={depositToken}
+        proposalDeposit={proposalDeposit}
         handleVotingCountChange={handleVotingCountChange}
         handleProposalEventChange={handleProposalEventChange}
         handleGuildBalanceChanges={handleGuildBalanceChanges}
@@ -318,6 +332,8 @@ export default function TransferList(props) {
         matches={matches} 
         accountId={accountId}
         memberStatus={memberStatus}
+        depositToken={depositToken}
+        proposalDeposit={proposalDeposit}
         handleQueueCountChange={handleQueueCountChange}
         handleProposalEventChange={handleProposalEventChange}
         handleGuildBalanceChanges={handleGuildBalanceChanges}
@@ -329,6 +345,8 @@ export default function TransferList(props) {
         matches={matches} 
         accountId={accountId}
         memberStatus={memberStatus}
+        depositToken={depositToken}
+        proposalDeposit={proposalDeposit}
         handleProcessCountChange={handleProcessCountChange}
         handleProposalEventChange={handleProposalEventChange}
         handleGuildBalanceChanges={handleGuildBalanceChanges}

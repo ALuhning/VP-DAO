@@ -44,7 +44,8 @@ export async function initContract() {
       'getMemberStatus',
       'getProposalVotes',
       'getMemberInfo',
-      'getUserTokenBalanceObject'
+      'getUserTokenBalanceObject',
+      'getProposalDeposit'
     ],
     // Change methods can modify the state. But you don't receive the returned value when called.
     changeMethods: [
@@ -62,7 +63,9 @@ export async function initContract() {
       'processProposal',
       'processWhitelistProposal',
       'processGuildKickProposal',
-      'getTokenName'    
+      'getTokenName',
+      'proposalPassed',
+      'proposalFailed'
     ],
   })
 

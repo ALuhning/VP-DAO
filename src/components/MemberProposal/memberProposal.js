@@ -101,16 +101,17 @@ console.log('depositToken ', depositToken)
     console.log('id sub ', id.substr(0,12))
     setFinished(false)
     
-    let finished = await window.contract.submitMemberProposal({
+    let finished = await window.contract.submitProposal({
                     proposalIdentifier: id.substr(0,12),
                     applicant: applicant,
-                    shares: shares,
-                    tribute: tribute,
-                    tributeType: depositToken
-                    }, BOATLOAD_OF_GAS)
+                    sharesRequested: shares,
+                    lootRequested: '0',
+                    tributeOffered: tribute,
+                    tributeToken: depositToken,
+                    paymentRequested: '0',
+                    paymentToken: depositToken
+                    }, process.env.DEFAULT_GAS_VALUE)
     let changed = await handleProposalEventChange()
-    await handleGuildBalanceChanges()
-    await handleEscrowBalanceChanges()
     if(finished && changed) {
       setFinished(true)
       setOpen(false)

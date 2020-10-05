@@ -84,6 +84,8 @@ export default function VotingListTable(props) {
             vote: 'yes'
             }, BOATLOAD_OF_GAS)
         await getUserVote(proposalIdentifier)
+        await handleProposalEventChange()
+           
     }
 
     async function handleNoVotingAction(proposalIdentifier) {
@@ -92,6 +94,7 @@ export default function VotingListTable(props) {
             vote: 'no'
             }, BOATLOAD_OF_GAS)
             await getUserVote(proposalIdentifier)
+            await handleProposalEventChange()
     }
 
     async function handleAbstainVotingAction(proposalIdentifier) {
@@ -100,6 +103,7 @@ export default function VotingListTable(props) {
             vote: 'abstain'
             }, BOATLOAD_OF_GAS)
             await getUserVote(proposalIdentifier)
+            await handleProposalEventChange()
     }
 
     async function getStatus(proposalIdentifier) {
@@ -162,6 +166,7 @@ export default function VotingListTable(props) {
 
      async function getUserVote(proposalIdentifier) {
         let result = await window.contract.getMemberProposalVote({memberAddress: accountId, proposalIdentifier: proposalIdentifier})
+        console.log('user vote result ', result)
         if(result == 'no vote yet') {
             setDisabled(false)
             return false
@@ -184,15 +189,16 @@ export default function VotingListTable(props) {
         for(let i = 0; i < requests.length; i++) {
             status = await getStatus(requests[i][0].requestId)
             votingPeriod = await getVotingPeriod(requests[i][0].requestId)
+            console.log('voting period', votingPeriod)
             votingPeriod ? setDisabled(false) : setDisabled(true)
             gracePeriod = await getGracePeriod(requests[i][0].requestId)
             if(status != 'Submitted' && status != 'Cancelled' && memberStatus) {
                 userVote = await getUserVote(requests[i][0].requestId)
-            } else {
-                userVote = false
             }
-           
+            
+            console.log('disabled ', disabled)
             proposalType = await getProposalType(requests[i][0].requestId)
+            console.log('proposal type ', proposalType)
             voteCounts = await getProposalVotes(requests[i][0].requestId)
             setNoVotes(voteCounts[0].no)
             setYesVotes(voteCounts[0].yes)
@@ -206,10 +212,9 @@ export default function VotingListTable(props) {
                     loot: requests[i][0].loot,
                     tribute: requests[i][0].tribute,
                     status: status, 
-                    votingPeriod: votingPeriod, 
-                    gracePeriod: gracePeriod, 
-                    userVote: userVote, 
                     proposalType: proposalType,
+                    votingPeriod: votingPeriod,
+                    gracePeriod: gracePeriod,
                     yesVotes: yesVotes,
                     noVotes: noVotes
                 })
@@ -261,7 +266,7 @@ export default function VotingListTable(props) {
                     <TableCell className={classes.cell} align="center"><div className={classes.cellText}>{row.requestId}</div></TableCell>
                     <TableCell className={classes.cell} align="center"><div className={classes.cellText}>Yes:{yesVotes} | No:{noVotes}</div></TableCell>
                     <TableCell className={classes.cell} align="center"><div className={classes.cellText}>
-                    {row.status == 'Sponsored' && row.votingPeriod == true ? <ButtonGroup orientation="vertical" aria-label="vertical contained primary button group"><Button variant="contained" disabled={disabled} color="primary" startIcon={<ThumbUpAlt />} onClick={(e) => handleYesVotingAction(row.requestId, e)}>Yes</Button> <Button variant="contained" disabled={disabled} color="secondary" startIcon={<ThumbDownAlt />} onClick={(e) => handleNoVotingAction(row.requestId, e)}>No</Button> <Button variant="contained" disabled={disabled} onClick={(e) => handleAbstainVotingAction(row.requestId, e)}>Abstain</Button></ButtonGroup> : null }
+                    {row.status == 'Sponsored' && row.votingPeriod == true ? <ButtonGroup disabled={disabled} orientation="vertical" aria-label="vertical contained primary button group"><Button variant="contained" color="primary" startIcon={<ThumbUpAlt />} onClick={(e) => handleYesVotingAction(row.requestId, e)}>Yes</Button> <Button variant="contained"  color="secondary" startIcon={<ThumbDownAlt />} onClick={(e) => handleNoVotingAction(row.requestId, e)}>No</Button> <Button variant="contained"  onClick={(e) => handleAbstainVotingAction(row.requestId, e)}>Abstain</Button></ButtonGroup> : null }
                     {row.status == 'Sponsored' && row.gracePeriod == true ? 'Grace' : null } 
                     </div></TableCell>
                        </TableRow>

@@ -47,6 +47,7 @@ export default function App() {
   const [memberStatus, setMemberStatus] = useState()
   const [userBalance, setUserBalance] = useState()
   const [memberInfo, setMemberInfo] = useState()
+  const [proposalDeposit, setProposalDeposit] = useState()
 
 
   
@@ -141,12 +142,16 @@ export default function App() {
               let token = await window.contract.getDepositToken()
               setDepositToken(token)
               console.log('is deposit token here ', depositToken)
+              let deposit = await window.contract.getProposalDeposit()
+              setProposalDeposit(deposit)
+              console.log('proposal deposit ', proposalDeposit)
               let result1 = await window.contract.getUserTokenBalance({user: window.accountId, token: depositToken})
               setUserBalance(result1)
               console.log('user balance ', userBalance)
               let result2 = await window.contract.getMemberInfo({member: window.accountId})
               setMemberInfo(result2)
               console.log('member Info', memberInfo)
+              
               // window.contract is set in utils.js after being called by initContract in index.js
               if(!tokenName) {
             //  let name = initialized ? await window.contract.getTokenName({}, BOATLOAD_OF_GAS) : null
@@ -466,6 +471,7 @@ export default function App() {
           tokenName={tokenName} 
           proposalEvents={proposalEvents}
           depositToken={depositToken}
+          proposalDeposit={proposalDeposit}
           summoner={summoner}
 
           />

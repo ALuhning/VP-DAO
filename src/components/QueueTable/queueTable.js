@@ -57,7 +57,6 @@ export default function QueueTable(props) {
         async function fetchData() {
             let newList = await resolveStatus(allProposalsList)
             handleQueueCountChange(newList.length)
-            
             setProposalList(newList)
         }
         if(allProposalsList.length > 0){
@@ -78,12 +77,22 @@ export default function QueueTable(props) {
     };
 
     async function handleProcessAction(proposalIdentifier) {
-        await window.contract.processProposal({
+       let passed = await window.contract.processProposal({
             proposalIdentifier: proposalIdentifier
-            }, BOATLOAD_OF_GAS)
+            }, process.env.DEFAULT_GAS_VALUE)
+        if(passed){
+            await window.contract.proposalPassed({
+                proposalIdentifier: proposalIdentifier
+                }, process.env.DEFAULT_GAS_VALUE)
+        } else {
+            await window.contract.proposalFailed({
+                proposalIdentifier: proposalIdentifier
+                }, process.env.DEFAULT_GAS_VALUE)
+        }
             await handleProposalEventChange()
             await handleGuildBalanceChanges()
             await handleEscrowBalanceChanges()
+           
     };
 
     async function getStatus(proposalIdentifier) {
@@ -140,16 +149,6 @@ export default function QueueTable(props) {
         return await window.contract.isGracePeriod({proposalIdentifier: proposalIdentifier})
      }
 
-     async function getUserVote(proposalIdentifier) {
-        let result = await window.contract.getMemberProposalVote({memberAddress: accountId, proposalIdentifier: proposalIdentifier})
-        if(result == 'no vote yet') {
-            return false
-        } else {
-            return true
-        }
-     }
-    
-
     async function resolveStatus(requests) {
         let status
         let votingPeriod
@@ -162,11 +161,6 @@ export default function QueueTable(props) {
             status = await getStatus(requests[i][0].requestId)
             votingPeriod = await getVotingPeriod(requests[i][0].requestId)
             gracePeriod = await getGracePeriod(requests[i][0].requestId)
-            if(status != 'Submitted' && status != 'Cancelled' && memberStatus) {
-                userVote = await getUserVote(requests[i][0].requestId)
-            } else {
-                userVote = false
-            }
             proposalType = await getProposalType(requests[i][0].requestId)
             console.log('status ', status)
             if(status == 'Sponsored' && status != 'Processed' && status !='Passed' && status != 'Not Passed' && status != 'Cancelled' && !votingPeriod && !gracePeriod){
@@ -179,7 +173,6 @@ export default function QueueTable(props) {
                     status: status, 
                     votingPeriod: votingPeriod, 
                     gracePeriod: gracePeriod, 
-                    userVote: userVote, 
                     proposalType: proposalType})
                 }
                 console.log('frl ', updated)
@@ -227,7 +220,7 @@ export default function QueueTable(props) {
                     <TableCell className={classes.cell} align="center"><div className={classes.cellText}>{row.tribute}</div></TableCell>
                     <TableCell className={classes.cell} align="center"><div className={classes.cellText}>{row.requestId}</div></TableCell>
                     <TableCell className={classes.cell} align="center"><div className={classes.cellText}>
-                      {accountId != row.proposer && row.status == 'Sponsored' && row.votingPeriod == false && row.gracePeriod == false ? <Button variant="contained" color="primary" onClick={(e) => handleProcessAction(row.requestId, e)}>Process</Button> : null}
+                      {accountId != row.proposer && row.status == 'Sponsored' && row.votingPeriod == false && row.gracePeriod == false ? <Button variant="contained" color="primary" onClick={() => handleProcessAction(row.requestId)}>Process</Button> : null}
                     </div></TableCell>
                        </TableRow>
                     

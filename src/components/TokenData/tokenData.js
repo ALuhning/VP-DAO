@@ -73,6 +73,7 @@ export default function TokenData(props) {
       accountId,
       memberStatus,
       depositToken,
+      proposalDeposit,
       guildBalance,
       escrowBalance,
       proposalEvents,
@@ -185,6 +186,8 @@ export default function TokenData(props) {
                   handleEscrowBalanceChanges={handleEscrowBalanceChanges}
                   proposalEvents={proposalEvents}
                   memberStatus={memberStatus}
+                  proposalDeposit={proposalDeposit}
+                  depositToken={depositToken}
                 />
               </Grid>
             </Grid>

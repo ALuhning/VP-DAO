@@ -164,7 +164,7 @@ export const sponsorProposalEvents = new PersistentDeque<SponsorProposalEvent>("
  * @param startingPeriod
  */
 export function sponsorProposalEvent(delegateKey: string, memberAddress: string, proposalId: u64, proposalIndex: u64, startingPeriod: u128): void {
-  DEBUG ? logging.log("[call] submitProposalEvent(" + delegateKey + ", " + memberAddress + ", " + proposalId.toString() + ", " + proposalIndex.toString() + ")") : false;
+  DEBUG ? logging.log("[call] sponsorProposalEvent(" + delegateKey + ", " + memberAddress + ", " + proposalId.toString() + ", " + proposalIndex.toString() + ")") : false;
   const spProposal = new SponsorProposalEvent();
   spProposal.delegateKey = delegateKey;
   spProposal.memberAddress = memberAddress;

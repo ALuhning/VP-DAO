@@ -145,7 +145,7 @@ export default function FundingProposal(props) {
                     lootRequested: funding,
                     tributeOffered: tributeOffer,
                     tributeToken: tributeType,
-                    paymentRequested: funding,
+                    paymentRequested: '0',
                     paymentToken: depositToken,
                     }, process.env.DEFAULT_GAS_VALUE)
     let changed = await handleProposalEventChange()
