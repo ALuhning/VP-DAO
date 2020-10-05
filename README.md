@@ -9,21 +9,18 @@ One option to deciding whether to fund the proposal is to have a human committee
 
 A better option considering we are interested in web 3.0 technologies is to provide a module that facilitates coordination and resource allocation through a decentralized autonomous organization (DAO).  This project ported Moloch v2 to run on NEAR and it could be the start of the answer.
 
+For this project, we needed a currency we could freely transfer around so we deployed a NEP-21 fungible token to NEAR (Vital Point Coin (VPC) using VP Guild's Fungible Token Module.  Moloch DAO allows multiple tokens to be used, so we could create multiple tokens and use them all, but for the purposes of this demo/project, we're limiting it to VPC.
 
-We're going to use NEAR's Fungible Token Standard (NEP-21), and Ethereum's ERC-20 standard as the basis for this project which will do the following:  
-
-- Allows someone to create a Fungible Token on the NEAR blockchain;
-- Adds some additional functionality to that token that is found in the ERC-20 standard but is not currently found in the NEAR fungible token spec (minting, burning); and
-- Build out beginning of a user role system that allows token owner and users to use the token in different ways.
-
-We're going to build the contracts with AssemblyScript and the frontend with React.
+The video below doesn't cover every aspect of the Moloch DAO, but it will give you a good overview.  The port is not 100% complete yet (still need to hook up ragequit, guildkick and sort out some gas issues) but it's nearing MVP for member and funding proposals.  Next steps will see some interface work to make it more intuitive/usable.
 
 Project Demo
 ----
 
-Here's a video demo of the fungible token creator on NEAR and administration wallet that you'll build in the course:
+Here's a video demo of the Moloch DAO port and NEAR NEP-21 Fungible Token Integration on NEAR:
 
 [![Vital Point Guild - Fungible Token Creation on NEAR](https://vitalpoint.ai/wp-content/uploads/2020/08/youtube-preview.png)](https://youtu.be/CGhPRDT1lnw "Building and Issuing Fungible Tokens on NEAR")
+
+Read more about our (https://vitalpoint.ai/decentralized-community-platform/ "Decentralized Community Platform") initiative and join our Guild to get involved in this project and others.
 
 [![Vital Point Guild](https://vitalpoint.ai/wp-content/uploads/2020/08/join-guild.png)](https://vitalpoint.ai "Vital Point Guild")
 
